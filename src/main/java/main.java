@@ -6,8 +6,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import javax.sound.midi.Soundbank;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Scanner;
 import java.net.UnknownHostException;
 
@@ -26,7 +31,7 @@ public class main {
           doc =  config(URL);
       }
         System.out.println("\n->Parte A: ");
-      cantLineas(doc.html());
+         cantLineas(URL);
         System.out.println("\n->Parte B: ");
       cantParrafos(doc);
         System.out.println("\n->Parte C: ");
@@ -36,7 +41,7 @@ public class main {
         System.out.println("\n->Parte E: ");
       campoTipoInput(doc);
         System.out.println("\n->Parte F: ");
-        peticion(doc,URL);
+        peticion(doc);
     }
     private static String pedirURL(){
         System.out.println("Introduzca una URL");
@@ -64,15 +69,26 @@ public class main {
         return doc;
     }
 
-    private static void cantLineas(String text){
-        String[] lineas = text.split("\n");
-        System.out.println("Cantidad de lineas del recurso retornado: " +lineas.length);
-       /* for(int i=0; i<lineas.length;i++){
-            System.out.println("linea " +i+": "+lineas[i]);
-        }*/
+    private static void cantLineas(String urlStr){
+        URL urlObj;
+        int cantLine = 0;
+        try {
+            urlObj = new URL(urlStr);
+            InputStreamReader leer = new InputStreamReader(urlObj.openStream());
+            BufferedReader br = new BufferedReader(leer);
+            while(br.readLine()!=null){
+                cantLine++;
+            }
+            System.out.println("Cantidad de lineas del recurso retornado: " +cantLine);
+        } catch (MalformedURLException e) {
+            System.out.println("El formato de la url esta malo");
+        } catch (IOException e) {
+            System.out.println("Ha ocurrido un error");
+        }
     }
     private static void cantParrafos(Document doc){
         Elements ps = doc.getElementsByTag("p");
+       // doc.outputSettings().
         System.out.println("Cantidad de parrafos: " +ps.size());
     }
     private static void cantImg(Document doc){
@@ -97,7 +113,6 @@ public class main {
         int i=1,x=1;
         Elements form = doc.getElementsByTag("form");
         for (Element f: form ) {
-            System.out.println("Formulario " +x+":");
             for (Element input : f.select("input")) {
                 System.out.println("Input "+i+": Tipo: " + input.attr("type"));
                 i++;
@@ -110,22 +125,16 @@ public class main {
             x++;
         }
     }
-    private static void peticion(Document doc, String URL) throws IOException {
+    private static void peticion(Document doc) throws IOException {
         int x=1;
         Document response = null ;
         Elements form = doc.getElementsByTag("form");
         for (Element f: form ) {
-            System.out.println("Formulario " +x+":");
             Elements forms = f.getElementsByAttributeValueContaining("method" , "post");
             for (Element mPost :forms) {
-                String  act = mPost.attr("action");
-                if(act.charAt(0) == '.') {
-                    String sinP = act.substring(1, act.length());
-                   response = Jsoup.connect(URL + sinP ).data("Asignatura", "Practica1").post();
-                } else {
-                    response = Jsoup.connect(URL + act).data("Asignatura", "Practica1").post();
-                }
-
+                System.out.println("Formulario " +x+":");
+                String ruta = mPost.absUrl("action");
+                response = Jsoup.connect(ruta).data("asignatura", "practica1").post();
                 System.out.println("Respuesta: ");
                 System.out.println(response);
             }
